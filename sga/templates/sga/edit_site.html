@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Public Site - SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-4xl mx-auto px-4 py-10">
+  
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">Edit Public Site</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage announcements and homepage settings</p>
+    </div>
+    <a href="{% url 'dashboard' %}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Dashboard</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Join SGA Button Toggle -->
+  <div class="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-900">Join SGA button</p>
+        <p class="text-xs text-gray-400 mt-1">
+          Currently <span class="font-medium {% if signup_enabled %}text-green-600{% else %}text-gray-500{% endif %}">
+            {% if signup_enabled %}visible on homepage{% else %}hidden{% endif %}
+          </span>
+        </p>
+      </div>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="toggle_signup">
+        <button type="submit" class="text-sm px-4 py-2 rounded-lg border transition font-medium
+          {% if signup_enabled %}border-red-200 text-red-600 hover:bg-red-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %}">
+          {% if signup_enabled %}Hide{% else %}Show{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create New Announcement -->
+  <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+    <h2 class="text-sm font-semibold text-gray-900 mb-4">Create announcement</h2>
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create_announcement">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Title</label>
+        <input type="text" name="title" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Body</label>
+        <textarea name="body" rows="3" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+      </div>
+      <div class="flex items-center justify-between">
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="checkbox" name="is_published" value="1" class="accent-blue-600">
+          Publish immediately
+        </label>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 rounded-lg transition font-medium">
+          Create
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing Announcements -->
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-900">Announcements</h2>
+    </div>
+    <div class="divide-y divide-gray-100">
+      {% for announcement in announcements %}
+      <div class="px-5 py-4">
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-900">{{ announcement.title }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ announcement.body }}</p>
+            <p class="text-xs text-gray-400 mt-2">
+              Created {{ announcement.created_at|date:"F j, Y" }} by {{ announcement.created_by.full_name }}
+            </p>
+          </div>
+          <span class="ml-3 px-2 py-0.5 rounded-full text-xs font-medium
+            {% if announcement.is_published %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+            {% if announcement.is_published %}Published{% else %}Draft{% endif %}
+          </span>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <form method="POST" class="inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_publish">
+            <input type="hidden" name="announcement_id" value="{{ announcement.id }}">
+            <button type="submit" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300 transition">
+              {% if announcement.is_published %}Unpublish{% else %}Publish{% endif %}
+            </button>
+          </form>
+          <form method="POST" class="inline" onsubmit="return confirm('Delete this announcement?')">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_announcement">
+            <input type="hidden" name="announcement_id" value="{{ announcement.id }}">
+            <button type="submit" class="text-xs px-3 py-1.5 rounded-lg text-red-500 hover:text-red-700 transition">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      {% empty %}
+      <div class="px-5 py-6 text-sm text-gray-400 text-center">
+        No announcements yet. Create one above.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

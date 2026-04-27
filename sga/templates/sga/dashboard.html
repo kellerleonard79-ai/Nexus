@@ -26,9 +26,9 @@
       <p class="text-sm font-medium text-gray-900">Meetings</p>
       <p class="text-xs text-gray-400 mt-1">Agendas, attendance and QR</p>
     </a>
-    <a href="{% url 'attendance' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
-      <p class="text-sm font-medium text-gray-900">Attendance</p>
-      <p class="text-xs text-gray-400 mt-1">View past QR sessions</p>
+    <a href="{% url 'edit_site' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Edit Public Site</p>
+      <p class="text-xs text-gray-400 mt-1">Announcements and settings</p>
     </a>
     <a href="{% url 'profile' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
       <p class="text-sm font-medium text-gray-900">Profile</p>
@@ -44,27 +44,6 @@
       <p class="text-xs text-gray-400 mt-1">View finances</p>
     </a>
     {% endif %}
-  </div>
-
-  <div class="bg-white border border-gray-200 rounded-xl p-5">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-sm font-medium text-gray-900">Join SGA button</p>
-        <p class="text-xs text-gray-400 mt-1">
-          Currently <span class="font-medium {% if signup_enabled %}text-green-600{% else %}text-gray-500{% endif %}">
-            {% if signup_enabled %}visible on homepage{% else %}hidden{% endif %}
-          </span>
-        </p>
-      </div>
-      <form method="POST">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="toggle_signup">
-        <button type="submit" class="text-sm px-4 py-2 rounded-lg border transition font-medium
-          {% if signup_enabled %}border-red-200 text-red-600 hover:bg-red-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %}">
-          {% if signup_enabled %}Hide{% else %}Show{% endif %}
-        </button>
-      </form>
-    </div>
   </div>
 
   {% else %}
