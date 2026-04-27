@@ -22,4 +22,5 @@ urlpatterns = [
     path('attendance/<str:token>/',       views.session_qr_view,     name='session_qr'),
     path('checkin/<str:token>/',          views.checkin_view,        name='checkin'),
     path('test/',                         views.test_view,           name='test'),
+    path('edit-site/',                    views.edit_site_view,      name='edit_site'),
 ]

@@ -802,3 +802,6 @@ def checkin_view(request, token):
         })
 
     return render(request, 'sga/checkin.html', {'session': session})
+def edit_site_view(request):
+    # For now, just render the template
+    return render(request, 'sga/edit_site.html')
