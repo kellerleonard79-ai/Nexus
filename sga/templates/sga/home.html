@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGA – Pensacola High School</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+ 
+  <!-- Nav -->
+  <nav class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <span class="font-semibold text-lg tracking-tight">PHS Student Government</span>
+      <div class="hidden sm:flex gap-6 text-sm text-gray-500">
+        <a href="#announcements" class="hover:text-gray-900 transition">Announcements</a>
+        <a href="#calendar" class="hover:text-gray-900 transition">Calendar</a>
+        <a href="{% url 'about' %}" class="hover:text-gray-900 transition">About</a>
+      </div>
+    </div>
+    <a href="{% url 'login' %}"
+      class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium">
+      Officer Login
+    </a>
+  </nav>
+ 
+  <!-- Hero -->
+  <section class="max-w-4xl mx-auto px-6 py-20 text-center">
+    <div class="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 rounded-full mb-6">
+      Pensacola High School
+    </div>
+    <h1 class="text-5xl font-bold text-gray-900 mb-4 leading-tight">
+      Student Government<br>Association
+    </h1>
+    <p class="text-lg text-gray-500 max-w-xl mx-auto">
+      Representing the students of Pensacola High School — planning events,
+      building community, and making your voice heard.
+    </p>
+    <p class="text-lg text-gray-500 max-w-xl mx-auto">
+      Representing the students of Pensacola High School — planning events,
+      building community, and making your voice heard.
+    </p>
+    {% if signup_enabled %}
+    <div class="mt-8">
+      <a href="{% url 'signup' %}"
+        class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg text-sm transition">
+        Join SGA
+      </a>
+    </div>
+    {% endif %}
+  </section>
+ 
+  <!-- Announcements -->
+  <section id="announcements" class="max-w-4xl mx-auto px-6 py-12">
+    <h2 class="text-2xl font-semibold mb-6">Announcements</h2>
+    {% if announcements %}
+      <div class="space-y-4">
+        {% for a in announcements %}
+        <div class="border border-gray-200 rounded-xl p-5">
+          <p class="text-sm font-medium text-gray-900 mb-1">{{ a.title }}</p>
+          <p class="text-sm text-gray-500">{{ a.body }}</p>
+          <p class="text-xs text-gray-400 mt-3">{{ a.created_at|date:"F j, Y" }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="border border-gray-200 rounded-xl p-6 text-sm text-gray-400">
+        No announcements yet. Check back soon.
+      </div>
+    {% endif %}
+  </section>
+ 
+  <!-- Calendar -->
+  <section id="calendar" class="max-w-4xl mx-auto px-6 py-12">
+    <h2 class="text-2xl font-semibold mb-6">Calendar</h2>
+    <div class="rounded-xl overflow-hidden border border-gray-200">
+      <iframe src="https://calendar.google.com/calendar/embed?src=c_0660093bc692b20cf903cc9ebe8c8a7ab767b99fcd4a467cc5b55193b1926b40%40group.calendar.google.com&ctz=America%2FChicago"
+        style="border: 0" width="100%" height="600" frameborder="0" scrolling="no"></iframe>
+    </div>
+  </section>
+ 
+  <!-- About -->
+ <section class="max-w-4xl mx-auto px-6 py-12 mb-16 text-center">
+  <a href="{% url 'about' %}"
+    class="inline-block border border-gray-200 hover:border-gray-400 text-gray-700 font-medium px-6 py-3 rounded-lg text-sm transition">
+    Learn more about SGA &rarr;
+  </a>
+</section>
+ 
+  <!-- Footer -->
+  <footer class="border-t border-gray-200 px-6 py-6 text-center text-xs text-gray-400">
+    Pensacola High School SGA · Built with SGA Nexus
+  </footer>
+ 
+</body>
+</html>

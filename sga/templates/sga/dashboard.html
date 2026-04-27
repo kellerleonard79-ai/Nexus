@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-4xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">Welcome, {{ member.full_name }}</h1>
+      <p class="text-sm text-gray-500">{{ member.get_permission_tier_display }} &middot; ID {{ member.student_id }}</p>
+    </div>
+    <a href="{% url 'logout' %}" class="text-sm text-gray-500 hover:text-gray-800">Sign out</a>
+  </div>
+
+  {% if member.permission_tier == 'OFFICER' or member.permission_tier == 'SCI' %}
+  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 mb-8">
+    <a href="{% url 'directory' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Member Directory</p>
+      <p class="text-xs text-gray-400 mt-1">Search and filter all members</p>
+    </a>
+    <a href="{% url 'meetings' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Meetings</p>
+      <p class="text-xs text-gray-400 mt-1">Agendas, attendance and QR</p>
+    </a>
+    <a href="{% url 'attendance' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Attendance</p>
+      <p class="text-xs text-gray-400 mt-1">View past QR sessions</p>
+    </a>
+    <a href="{% url 'profile' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Profile</p>
+      <p class="text-xs text-gray-400 mt-1">Committees, achievements</p>
+    </a>
+    {% if member.permission_tier == 'SCI' %}
+    <a href="#" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Elections</p>
+      <p class="text-xs text-gray-400 mt-1">Manage applications</p>
+    </a>
+    <a href="#" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+      <p class="text-sm font-medium text-gray-900">Bookkeeping</p>
+      <p class="text-xs text-gray-400 mt-1">View finances</p>
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-900">Join SGA button</p>
+        <p class="text-xs text-gray-400 mt-1">
+          Currently <span class="font-medium {% if signup_enabled %}text-green-600{% else %}text-gray-500{% endif %}">
+            {% if signup_enabled %}visible on homepage{% else %}hidden{% endif %}
+          </span>
+        </p>
+      </div>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="toggle_signup">
+        <button type="submit" class="text-sm px-4 py-2 rounded-lg border transition font-medium
+          {% if signup_enabled %}border-red-200 text-red-600 hover:bg-red-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %}">
+          {% if signup_enabled %}Hide{% else %}Show{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="bg-white border border-gray-200 rounded-xl p-6 text-sm text-gray-500">
+    Your application is pending approval. Check back soon.
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

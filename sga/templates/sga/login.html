@@ -1,0 +1,29 @@
+{% extends 'sga/base.html' %}
+{% block title %}Officer Login{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
+    <h1 class="text-2xl font-semibold text-gray-900 mb-1">SGA Nexus</h1>
+    <p class="text-sm text-gray-500 mb-6">Pensacola High School</p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+        <input type="text" name="student_id" maxlength="6" placeholder="6-digit ID"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input type="password" name="password"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition">
+        Sign in
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Directory – SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Member Directory</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ members|length }} member{{ members|length|pluralize }}</p>
+      </div>
+      <a href="{% url 'dashboard' %}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Dashboard</a>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mb-4 px-4 py-3 rounded-lg text-sm
+          {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="GET" class="mb-6">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search by name..."
+        class="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </form>
+
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50">
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Name</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Student ID</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Grade</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Shirt</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Dues</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Tier</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Attendance</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in members %}
+          <tr class="border-b border-gray-100 hover:bg-gray-50 transition {% if m.has_attendance_warning %}bg-red-50{% endif %}">
+            <td class="px-4 py-3 font-medium text-gray-900">
+              <div class="flex items-center gap-2">
+                <a href="{% url 'member_profile' m.student_id %}" class="hover:text-blue-600 transition">
+                  {{ m.full_name }}
+                </a>
+                {% if m.has_attendance_warning %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                  &#9888; Warning
+                </span>
+                {% endif %}
+              </div>
+            </td>
+            <td class="px-4 py-3 text-gray-500">{{ m.student_id }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ m.get_grade_display }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ m.shirt_size }}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                {% if m.dues_status == 'PAID' %}bg-green-100 text-green-700
+                {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                {{ m.dues_status }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                {% if m.member_status == 'ACTIVE' %}bg-blue-100 text-blue-700
+                {% else %}bg-gray-100 text-gray-500{% endif %}">
+                {{ m.member_status }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-gray-500">{{ m.permission_tier }}</td>
+            <td class="px-4 py-3 text-xs text-gray-500">
+              <span class="text-red-500">{{ m.unexcused_absences }}U</span>
+              &nbsp;
+              <span class="text-yellow-600">{{ m.excused_absences }}E</span>
+            </td>
+            <td class="px-4 py-3">
+              <form method="POST" action="{% url 'delete_member' m.student_id %}"
+                onsubmit="return confirm('Delete {{ m.full_name }}? This cannot be undone.')">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="px-4 py-6 text-center text-gray-400">No members found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

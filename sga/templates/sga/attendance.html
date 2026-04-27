@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance – SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-3xl mx-auto px-4 py-10">
+
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">Attendance</h1>
+      <p class="text-sm text-gray-500 mt-1">Create and manage check-in sessions</p>
+    </div>
+    <a href="{% url 'dashboard' %}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Dashboard</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm
+        {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Create session -->
+  <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8">
+    <h2 class="text-sm font-semibold text-gray-900 mb-4">New session</h2>
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Session name</label>
+        <input type="text" name="session_name" placeholder="e.g. April 20 Meeting"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Check-in opens</label>
+          <input type="datetime-local" name="start_time"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Check-in closes</label>
+          <input type="datetime-local" name="end_time"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <p class="text-xs text-gray-400">Leave times blank to keep the session open until you close it manually.</p>
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2.5 rounded-lg transition font-medium">
+        Create &amp; get QR
+      </button>
+    </form>
+  </div>
+
+  <!-- Past sessions header + date search -->
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-sm font-semibold text-gray-700">Past sessions</h2>
+    <form method="GET" class="flex items-center gap-2">
+      <input type="date" name="date" value="{{ date_filter }}"
+        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button type="submit"
+        class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition">
+        Filter
+      </button>
+      {% if date_filter %}
+      <a href="{% url 'attendance' %}" class="text-xs text-gray-400 hover:text-gray-600">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="space-y-3">
+    {% for s in sessions %}
+    <a href="{% url 'session_qr' s.qr_token %}"
+      class="block bg-white border border-gray-200 rounded-xl px-5 py-4 hover:shadow-sm transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-900">{{ s.session_name }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">
+            {{ s.created_at|date:"F j, Y" }}
+            {% if s.start_time and s.end_time %}
+              &middot; {{ s.start_time|date:"g:i A" }} &ndash; {{ s.end_time|date:"g:i A" }}
+            {% endif %}
+            &middot; {{ s.records.count }} checked in
+          </p>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium
+          {% if s.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+          {% if s.is_active %}Open{% else %}Closed{% endif %}
+        </span>
+      </div>
+    </a>
+    {% empty %}
+    <div class="border border-gray-200 rounded-xl p-6 text-sm text-gray-400">
+      {% if date_filter %}No sessions found for that date.{% else %}No sessions yet. Create one above.{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+</body>
+</html>

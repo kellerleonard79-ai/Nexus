@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meetings - SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-3xl mx-auto px-4 py-10">
+
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">Meetings</h1>
+      <p class="text-sm text-gray-500 mt-1">Schedule, agendas, and attendance</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'dashboard' %}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Dashboard</a>
+      <a href="{% url 'create_meeting' %}" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium">
+        New meeting
+      </a>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="mb-8">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">Upcoming</h2>
+    {% if upcoming %}
+    <div class="space-y-3">
+      {% for m in upcoming %}
+      <a href="{% url 'meeting_detail' m.id %}" class="block bg-white border border-blue-100 rounded-xl px-5 py-4 hover:shadow-sm transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ m.title }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ m.date|date:"F j, Y" }}
+              {% if m.scheduled_start %}&middot; {{ m.scheduled_start|date:"g:i A" }}{% endif %}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            {% if m.attendance_session %}
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium {% if m.attendance_session.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+              {% if m.attendance_session.is_active %}QR active{% else %}QR set{% endif %}
+            </span>
+            {% endif %}
+            <span class="text-xs text-blue-500">&rarr;</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="border border-gray-200 rounded-xl p-6 text-sm text-gray-400">
+      No upcoming meetings. Create one above.
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-gray-700">Past meetings</h2>
+      <form method="GET" class="flex items-center gap-2">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by title..."
+          class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition">Search</button>
+        {% if query %}<a href="{% url 'meetings' %}" class="text-xs text-gray-400 hover:text-gray-600">Clear</a>{% endif %}
+      </form>
+    </div>
+    <div class="space-y-3">
+      {% for m in past %}
+      <a href="{% url 'meeting_detail' m.id %}" class="block bg-white border border-gray-200 rounded-xl px-5 py-4 hover:shadow-sm transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ m.title }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ m.date|date:"F j, Y" }}
+              {% if m.attendance_session %}&middot; {{ m.attendance_session.records.count }} attended{% endif %}
+            </p>
+          </div>
+          <span class="text-xs text-gray-400">&rarr;</span>
+        </div>
+      </a>
+      {% empty %}
+      <div class="border border-gray-200 rounded-xl p-6 text-sm text-gray-400">
+        {% if query %}No meetings matching "{{ query }}".{% else %}No past meetings yet.{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

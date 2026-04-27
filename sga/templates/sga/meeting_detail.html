@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ meeting.title }} - SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-2xl mx-auto px-4 py-10">
+
+  <a href="{% url 'meetings' %}" class="text-xs text-gray-400 hover:text-gray-600 mb-6 block">&larr; Meetings</a>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6 mb-4">
+    <div class="flex items-start justify-between">
+      <div id="title-display">
+        <h1 class="text-2xl font-semibold text-gray-900">{{ meeting.title }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ meeting.date|date:"F j, Y" }}</p>
+      </div>
+      <button onclick="document.getElementById('edit-form').classList.toggle('hidden')" class="text-xs text-gray-400 hover:text-gray-600 mt-1">Edit</button>
+    </div>
+    <form method="POST" id="edit-form" class="hidden mt-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit_title">
+      <div class="flex gap-2">
+        <input type="text" name="new_title" value="{{ meeting.title }}"
+          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition font-medium">Save</button>
+        <button type="button" onclick="document.getElementById('edit-form').classList.add('hidden')" class="text-sm px-3 py-2 text-gray-500 hover:text-gray-800">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 mb-4">
+
+    <a href="{% url 'agenda' meeting.id %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition text-center">
+      <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <p class="text-sm font-medium text-gray-900">Agenda</p>
+      <p class="text-xs text-gray-400 mt-0.5">{% if has_agenda %}View and edit{% else %}Create agenda{% endif %}</p>
+    </a>
+
+    {% if meeting.attendance_session %}
+    <a href="{% url 'session_qr' meeting.attendance_session.qr_token %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition text-center">
+      <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+        </svg>
+      </div>
+      <p class="text-sm font-medium text-gray-900">QR Session</p>
+      <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium mt-1 {% if meeting.attendance_session.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+        {% if meeting.attendance_session.is_active %}Active{% else %}Closed{% endif %}
+      </span>
+    </a>
+    {% else %}
+    <button onclick="document.getElementById('qr-panel').classList.toggle('hidden')" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition text-center">
+      <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+        </svg>
+      </div>
+      <p class="text-sm font-medium text-gray-900">Create QR Session</p>
+      <p class="text-xs text-gray-400 mt-0.5">Tap to set up</p>
+    </button>
+    {% endif %}
+  </div>
+
+  {% if not meeting.attendance_session %}
+  <div id="qr-panel" class="hidden bg-white border border-gray-200 rounded-xl p-6 mb-4">
+    <h2 class="text-sm font-semibold text-gray-900 mb-4">QR session setup</h2>
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create_qr">
+      <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+        <input type="checkbox" name="scheduled" id="scheduled-check" class="accent-blue-600">
+        <div>
+          <p class="text-sm font-medium text-gray-900">Schedule auto open/close</p>
+          <p class="text-xs text-gray-400">Session opens and closes automatically at set times.</p>
+        </div>
+      </label>
+      <div id="time-fields" class="hidden grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Opens at</label>
+          <input type="datetime-local" name="start_time" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Closes at</label>
+          <input type="datetime-local" name="end_time" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm px-5 py-2.5 rounded-lg transition font-medium">
+        Generate QR code
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if meeting.attendance_session and qr_b64 %}
+  <div class="bg-white border border-gray-200 rounded-xl p-5 mb-4 text-center">
+    <p class="text-xs text-gray-500 mb-3">Share this QR at the meeting for check-in</p>
+    <div class="flex justify-center mb-3">
+      <img src="data:image/png;base64,{{ qr_b64 }}" alt="Check-in QR" class="w-32 h-32 rounded">
+    </div>
+    <p class="text-xs text-gray-400 break-all mb-3">{{ checkin_url }}</p>
+    <div class="flex justify-center gap-2">
+      <a href="data:image/png;base64,{{ qr_b64 }}" download="{{ meeting.title }}-qr.png"
+        class="text-xs border border-gray-300 hover:border-gray-400 text-gray-600 px-3 py-1.5 rounded-lg transition">Download QR</a>
+      <a href="{% url 'session_qr' meeting.attendance_session.qr_token %}"
+        class="text-xs border border-blue-200 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition">Full session view</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="bg-white border border-gray-200 rounded-xl p-5">
+    <p class="text-xs text-gray-400 mb-3">Permanently delete this meeting and all associated data.</p>
+    <form method="POST" onsubmit="return confirm('Delete this meeting? This cannot be undone.')">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete_meeting">
+      <button type="submit" class="text-sm px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition font-medium">
+        Delete meeting
+      </button>
+    </form>
+  </div>
+
+</div>
+<script>
+  document.getElementById('scheduled-check').addEventListener('change', function() {
+    document.getElementById('time-fields').classList.toggle('hidden', !this.checked);
+  });
+</script>
+</body>
+</html>

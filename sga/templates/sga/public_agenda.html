@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ meeting.title }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen">
+
+  {% if checked_in %}
+  <div class="bg-green-600 text-white text-center py-3 text-sm font-medium">
+    You are checked in! Follow along below.
+  </div>
+  {% endif %}
+
+  <div class="max-w-2xl mx-auto px-6 py-10">
+
+    <div class="text-center mb-8">
+      <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Pensacola High School SGA</p>
+      <h1 class="text-2xl font-bold text-gray-900">{{ meeting.title }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ meeting.date|date:"F j, Y" }}</p>
+      {% if agenda and agenda.called_to_order_time %}
+      <p class="text-xs text-gray-400 mt-1">Called to order: {{ agenda.called_to_order_time|date:"g:i A" }}</p>
+      {% endif %}
+    </div>
+
+    {% if not agenda %}
+    <div class="text-center text-gray-400 text-sm py-12 border border-dashed border-gray-200 rounded-xl">
+      Agenda not yet available.
+    </div>
+
+    {% else %}
+
+    {% for section in sections %}
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-3">
+        <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">{{ section.get_section_type_display }}</h2>
+        <div class="flex-1 border-t border-gray-100"></div>
+      </div>
+
+      {% if section.section_type == 'OPENING' %}
+      {% if agenda.presiding_officer or agenda.quorum_confirmed or agenda.agenda_approved %}
+      <div class="text-xs text-gray-500 space-y-1 mb-3 pl-2">
+        {% if agenda.presiding_officer %}<p>Presiding: <span class="text-gray-700">{{ agenda.presiding_officer }}</span></p>{% endif %}
+        {% if agenda.quorum_confirmed %}<p class="text-green-600">Quorum confirmed</p>{% endif %}
+        {% if agenda.agenda_approved %}<p class="text-green-600">Agenda approved</p>{% endif %}
+      </div>
+      {% endif %}
+      {% endif %}
+
+      {% if section.section_type == 'ADJOURNMENT' %}
+      {% if agenda.next_meeting_date or agenda.adjourned_time %}
+      <div class="text-xs text-gray-500 space-y-1 mb-3 pl-2">
+        {% if agenda.next_meeting_date %}<p>Next meeting: <span class="text-gray-700">{{ agenda.next_meeting_date|date:"F j, Y" }}</span></p>{% endif %}
+        {% if agenda.adjourned_time %}<p>Adjourned: <span class="text-gray-700">{{ agenda.adjourned_time|date:"g:i A" }}</span></p>{% endif %}
+      </div>
+      {% endif %}
+      {% endif %}
+
+      {% if section.items.count == 0 %}
+      <p class="text-sm text-gray-400 pl-2">None</p>
+      {% else %}
+      <div class="space-y-3">
+        {% for item in section.items.all %}
+        <div class="pl-2">
+          <div class="flex items-start gap-2">
+            <span class="text-gray-300 mt-0.5 text-xs">&#9679;</span>
+            <div class="flex-1">
+              <p class="text-sm text-gray-900">{{ item.text }}</p>
+              {% for sub in item.subitems.all %}
+              <p class="text-xs text-gray-500 mt-1 pl-4">&ndash; {{ sub.text }}</p>
+              {% endfor %}
+              {% if item.notes %}
+              <p class="text-xs text-gray-400 italic mt-1 pl-0">{{ item.notes }}</p>
+              {% endif %}
+            </div>
+            {% if item.status %}
+            <span class="text-xs font-medium flex-shrink-0 px-2 py-0.5 rounded-full
+              {% if item.status == 'PASSED' %}bg-green-100 text-green-700
+              {% elif item.status == 'TABLED' %}bg-yellow-100 text-yellow-700
+              {% elif item.status == 'POSTPONED' %}bg-red-100 text-red-700
+              {% else %}bg-purple-100 text-purple-700{% endif %}">
+              {{ item.get_status_display }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {% endif %}
+
+  </div>
+
+  {% if qr_b64 %}
+  <div class="fixed bottom-4 right-4 bg-white border border-gray-200 rounded-xl p-3 shadow-lg text-center w-28">
+    <p class="text-xs text-gray-500 mb-1">Check in</p>
+    <img src="data:image/png;base64,{{ qr_b64 }}" alt="Check-in QR" class="w-full rounded">
+  </div>
+  {% endif %}
+
+</body>
+</html>

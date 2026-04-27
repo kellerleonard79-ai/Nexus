@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda - {{ meeting.title }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    .sortable-ghost { opacity: 0.4; background: #eff6ff; border-radius: 8px; }
+    .drag-handle { cursor: grab; }
+    .drag-handle:active { cursor: grabbing; }
+    [contenteditable]:focus { outline: none; box-shadow: 0 0 0 2px #3b82f6; border-radius: 4px; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+      .print-section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6 no-print">
+    <div>
+      <a href="{% url 'meeting_detail' meeting.id %}" class="text-xs text-gray-400 hover:text-gray-600 block mb-1">&larr; Meeting</a>
+      <h1 class="text-xl font-semibold text-gray-900">Agenda Editor</h1>
+      <p class="text-sm text-gray-500">{{ meeting.title }}</p>
+    </div>
+    <div class="flex gap-2 flex-wrap justify-end">
+      <a href="{% url 'public_agenda' meeting.id %}" target="_blank"
+        class="text-sm border border-gray-300 hover:border-gray-400 text-gray-700 px-3 py-2 rounded-lg transition">
+        Public view
+      </a>
+      <button onclick="window.print()" class="text-sm border border-gray-300 hover:border-gray-400 text-gray-700 px-3 py-2 rounded-lg transition">
+        Print
+      </button>
+      {% if tabled_count %}
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="carry_tabled">
+        <button type="submit" class="text-sm border border-yellow-300 text-yellow-700 hover:bg-yellow-50 px-3 py-2 rounded-lg transition">
+          Carry tabled items &rarr; next meeting
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %} no-print">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="flex gap-6">
+
+    <!-- Main agenda column -->
+    <div class="flex-1 min-w-0">
+
+      <!-- Agenda title print header -->
+      <div class="hidden print:block text-center mb-6">
+        <h2 class="text-2xl font-bold">{{ meeting.title }}</h2>
+        <p class="text-gray-600">{{ meeting.date|date:"F j, Y" }}</p>
+        {% if agenda.called_to_order_time %}<p class="text-sm text-gray-500">Called to order: {{ agenda.called_to_order_time|date:"g:i A" }}</p>{% endif %}
+      </div>
+
+      {% for section in sections %}
+      {% if not section.is_hidden %}
+      <div class="bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden print-section">
+
+        <!-- Section header -->
+        <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100">
+          <h2 class="text-sm font-semibold text-gray-900">{{ section.get_section_type_display }}</h2>
+          <div class="flex items-center gap-2 no-print">
+            {% if section.items.count == 0 %}
+            <form method="POST">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle_section">
+              <input type="hidden" name="section_id" value="{{ section.id }}">
+              <button type="submit" class="text-xs text-gray-400 hover:text-gray-600">Hide</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Opening section special fields -->
+        {% if section.section_type == 'OPENING' %}
+        <div class="px-5 py-4 border-b border-gray-100 bg-blue-50 no-print">
+          <form method="POST" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_opening">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Presiding officer</label>
+                <input type="text" name="presiding_officer" value="{{ agenda.presiding_officer }}"
+                  class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Called to order</label>
+                <input type="datetime-local" name="called_to_order_time"
+                  value="{% if agenda.called_to_order_time %}{{ agenda.called_to_order_time|date:'Y-m-d' }}T{{ agenda.called_to_order_time|date:'H:i' }}{% endif %}"
+                  class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" name="quorum_confirmed" {% if agenda.quorum_confirmed %}checked{% endif %} class="accent-blue-600">
+                Quorum confirmed
+              </label>
+              <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" name="agenda_approved" {% if agenda.agenda_approved %}checked{% endif %} class="accent-blue-600">
+                Agenda approved
+              </label>
+            </div>
+            <div class="flex justify-between items-center">
+              {% if meeting.attendance_session %}
+              <form method="POST" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="sync_qr">
+                <button type="submit" class="text-xs text-blue-500 hover:text-blue-700">Sync times from QR session</button>
+              </form>
+              {% endif %}
+              <button type="submit" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition ml-auto">Save</button>
+            </div>
+          </form>
+        </div>
+        {% if agenda.presiding_officer or agenda.called_to_order_time %}
+        <div class="px-5 py-3 text-xs text-gray-500 border-b border-gray-100 hidden print:block">
+          {% if agenda.presiding_officer %}Presiding: {{ agenda.presiding_officer }} &nbsp;|&nbsp;{% endif %}
+          {% if agenda.called_to_order_time %}Called to order: {{ agenda.called_to_order_time|date:"g:i A" }} &nbsp;|&nbsp;{% endif %}
+          {% if agenda.quorum_confirmed %}Quorum confirmed &nbsp;|&nbsp;{% endif %}
+          {% if agenda.agenda_approved %}Agenda approved{% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Adjournment section special fields -->
+        {% if section.section_type == 'ADJOURNMENT' %}
+        <div class="px-5 py-4 border-b border-gray-100 bg-blue-50 no-print">
+          <form method="POST" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_adjournment">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Next meeting date</label>
+                <input type="date" name="next_meeting_date"
+                  value="{% if agenda.next_meeting_date %}{{ agenda.next_meeting_date|date:'Y-m-d' }}{% endif %}"
+                  class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Adjourned at</label>
+                <input type="datetime-local" name="adjourned_time"
+                  value="{% if agenda.adjourned_time %}{{ agenda.adjourned_time|date:'Y-m-d' }}T{{ agenda.adjourned_time|date:'H:i' }}{% endif %}"
+                  class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition">Save</button>
+            </div>
+          </form>
+        </div>
+        {% if agenda.next_meeting_date or agenda.adjourned_time %}
+        <div class="px-5 py-3 text-xs text-gray-500 border-b border-gray-100 hidden print:block">
+          {% if agenda.next_meeting_date %}Next meeting: {{ agenda.next_meeting_date|date:"F j, Y" }} &nbsp;|&nbsp;{% endif %}
+          {% if agenda.adjourned_time %}Adjourned: {{ agenda.adjourned_time|date:"g:i A" }}{% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Items list (sortable) -->
+        <div id="section-{{ section.id }}" class="divide-y divide-gray-50">
+          {% for item in section.items.all %}
+          <div class="item-row px-5 py-3" data-item-id="{{ item.id }}">
+            <div class="flex items-start gap-3">
+              <span class="drag-handle text-gray-300 hover:text-gray-500 mt-0.5 no-print select-none text-lg leading-none">&vellip;</span>
+              <div class="flex-1 min-w-0">
+                <!-- Item text (editable inline) -->
+                <form method="POST" class="mb-1 update-item-form" data-item-id="{{ item.id }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_item">
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <textarea name="text" rows="1"
+                    class="w-full text-sm text-gray-900 border-0 bg-transparent resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-1 py-0.5"
+                    oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">{{ item.text }}</textarea>
+                </form>
+
+                <!-- Sub-items -->
+                {% for sub in item.subitems.all %}
+                <div class="flex items-center gap-2 mt-1 pl-4">
+                  <span class="text-gray-300 text-xs">&ndash;</span>
+                  <span class="text-xs text-gray-600 flex-1">{{ sub.text }}</span>
+                  <form method="POST" class="no-print">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_subitem">
+                    <input type="hidden" name="subitem_id" value="{{ sub.id }}">
+                    <button type="submit" class="text-gray-300 hover:text-red-400 text-xs">&times;</button>
+                  </form>
+                </div>
+                {% endfor %}
+
+                <!-- Add subitem -->
+                <form method="POST" class="flex items-center gap-2 mt-2 pl-4 no-print add-subitem-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="add_subitem">
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <input type="text" name="text" placeholder="Add sub-item..."
+                    class="flex-1 text-xs border-0 border-b border-gray-200 focus:border-blue-400 focus:outline-none bg-transparent py-0.5 text-gray-600 placeholder-gray-300">
+                  <button type="submit" class="text-blue-500 hover:text-blue-700 text-lg leading-none font-light">+</button>
+                </form>
+              </div>
+
+              <!-- Status badge + notes (right side) -->
+              <div class="flex flex-col items-end gap-1 min-w-32 no-print">
+                <form method="POST" class="update-item-form" data-item-id="{{ item.id }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_item">
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <select name="status" onchange="this.form.submit()"
+                    class="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400
+                    {% if item.status == 'PASSED' %}bg-green-50 text-green-700
+                    {% elif item.status == 'TABLED' %}bg-yellow-50 text-yellow-700
+                    {% elif item.status == 'POSTPONED' %}bg-red-50 text-red-700
+                    {% elif item.status == 'DILATED' %}bg-purple-50 text-purple-700
+                    {% else %}bg-white text-gray-500{% endif %}">
+                    <option value="" {% if item.status == '' %}selected{% endif %}>No status</option>
+                    <option value="PASSED"    {% if item.status == 'PASSED'    %}selected{% endif %}>Passed</option>
+                    <option value="TABLED"    {% if item.status == 'TABLED'    %}selected{% endif %}>Tabled</option>
+                    <option value="POSTPONED" {% if item.status == 'POSTPONED' %}selected{% endif %}>Postponed Indefinitely</option>
+                    <option value="DILATED"   {% if item.status == 'DILATED'   %}selected{% endif %}>Dilated</option>
+                  </select>
+                </form>
+                <form method="POST" class="w-full">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_item">
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <button type="submit" class="text-xs text-gray-300 hover:text-red-400 w-full text-right">Delete</button>
+                </form>
+              </div>
+
+              <!-- Status badge for print -->
+              {% if item.status %}
+              <span class="hidden print:inline text-xs font-medium
+                {% if item.status == 'PASSED' %}text-green-700
+                {% elif item.status == 'TABLED' %}text-yellow-700
+                {% elif item.status == 'POSTPONED' %}text-red-700
+                {% else %}text-purple-700{% endif %}">
+                [{{ item.get_status_display }}]
+              </span>
+              {% endif %}
+            </div>
+
+            <!-- Secretary notes -->
+            <div class="mt-2 pl-7">
+              <form method="POST" class="update-notes-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_item">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <textarea name="notes" rows="1" placeholder="Secretary notes..."
+                  class="w-full text-xs text-gray-500 border-0 border-b border-dashed border-gray-200 focus:border-blue-300 focus:outline-none bg-transparent resize-none py-0.5 placeholder-gray-300"
+                  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">{{ item.notes }}</textarea>
+                {% if item.notes %}
+                <p class="text-xs text-gray-400 mt-0.5 hidden print:block italic">{{ item.notes }}</p>
+                {% endif %}
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Add item -->
+        <div class="px-5 py-3 border-t border-gray-100 no-print">
+          <form method="POST" class="flex items-center gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_item">
+            <input type="hidden" name="section_id" value="{{ section.id }}">
+            <input type="text" name="text" placeholder="Add item to {{ section.get_section_type_display }}..."
+              class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300">
+            <button type="submit" class="text-blue-600 hover:text-blue-800 text-2xl leading-none font-light px-1">+</button>
+          </form>
+        </div>
+
+      </div>
+      {% endif %}
+      {% endfor %}
+
+      <!-- Hidden sections (show/unhide) -->
+      {% for section in sections %}
+      {% if section.is_hidden %}
+      <div class="mb-2 no-print">
+        <form method="POST" class="inline">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="toggle_section">
+          <input type="hidden" name="section_id" value="{{ section.id }}">
+          <button type="submit" class="text-xs text-gray-400 hover:text-gray-600 border border-dashed border-gray-300 rounded-lg px-3 py-1.5">
+            + Show {{ section.get_section_type_display }}
+          </button>
+        </form>
+      </div>
+      {% endif %}
+      {% endfor %}
+
+    </div>
+
+    <!-- Right sidebar: QR code for late arrivals -->
+    {% if qr_b64 and meeting.attendance_session.is_active %}
+    <div class="w-48 flex-shrink-0 no-print">
+      <div class="bg-white border border-gray-200 rounded-xl p-4 sticky top-6 text-center">
+        <p class="text-xs font-medium text-gray-700 mb-2">Late arrivals</p>
+        <img src="data:image/png;base64,{{ qr_b64 }}" alt="Check-in QR" class="w-full rounded mb-2">
+        <p class="text-xs text-gray-400">Scan to check in</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+// Drag-to-reorder for each section
+document.querySelectorAll('[id^="section-"]').forEach(function(el) {
+  const sectionId = el.id.replace('section-', '');
+  Sortable.create(el, {
+    animation: 150,
+    handle: '.drag-handle',
+    ghostClass: 'sortable-ghost',
+    onEnd: function() {
+      const itemIds = Array.from(el.querySelectorAll('.item-row')).map(r => r.dataset.itemId);
+      fetch('/meetings/{{ meeting.id }}/agenda/reorder/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify({ item_ids: itemIds }),
+      });
+    }
+  });
+});
+
+// Auto-save notes on blur
+document.querySelectorAll('.update-notes-form textarea').forEach(function(ta) {
+  ta.addEventListener('blur', function() {
+    this.closest('form').submit();
+  });
+});
+
+// Auto-save item text on blur
+document.querySelectorAll('.update-item-form textarea[name="text"]').forEach(function(ta) {
+  ta.addEventListener('blur', function() {
+    this.closest('form').submit();
+  });
+  // Auto-resize on load
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+});
+
+// Clear add-item inputs after submit
+document.querySelectorAll('form').forEach(function(form) {
+  form.addEventListener('submit', function() {
+    const inp = this.querySelector('input[name="text"]');
+    if (inp) setTimeout(() => inp.value = '', 0);
+  });
+});
+</script>
+</body>
+</html>

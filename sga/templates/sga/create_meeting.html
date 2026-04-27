@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Meeting - SGA Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center py-12">
+<div class="bg-white border border-gray-200 rounded-2xl p-8 w-full max-w-md">
+
+  <a href="{% url 'meetings' %}" class="text-xs text-gray-400 hover:text-gray-600 mb-6 block">&larr; Meetings</a>
+  <h1 class="text-2xl font-semibold text-gray-900 mb-1">New meeting</h1>
+  <p class="text-sm text-gray-500 mb-6">Set a date and title to get started.</p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm bg-red-50 text-red-700">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST" class="space-y-5" id="meeting-form">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Date</label>
+      <input type="date" name="date" id="date-input" required
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-2">Title</label>
+      <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 mb-2 transition">
+        <input type="radio" name="title_option" value="default" id="opt-default" checked class="accent-blue-600">
+        <div>
+          <p class="text-sm font-medium text-gray-900">Use default title</p>
+          <p class="text-xs text-gray-400" id="default-preview">SGA Meeting &ndash; [date]</p>
+        </div>
+      </label>
+      <label class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+        <input type="radio" name="title_option" value="custom" id="opt-custom" class="accent-blue-600 mt-0.5">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-900 mb-2">Custom title</p>
+          <input type="text" name="title" id="custom-title" placeholder="e.g. Special Session"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+          <p class="text-xs text-gray-400 mt-1">Date will be appended automatically.</p>
+        </div>
+      </label>
+    </div>
+
+    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition">
+      Create meeting
+    </button>
+  </form>
+</div>
+
+<script>
+  const dateInput = document.getElementById('date-input');
+  const defaultPreview = document.getElementById('default-preview');
+  const optDefault = document.getElementById('opt-default');
+  const optCustom = document.getElementById('opt-custom');
+  const customTitle = document.getElementById('custom-title');
+
+  function formatDate(val) {
+    if (!val) return '[date]';
+    const d = new Date(val + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  dateInput.addEventListener('change', () => {
+    defaultPreview.textContent = 'SGA Meeting \u2013 ' + formatDate(dateInput.value);
+  });
+
+  optDefault.addEventListener('change', () => { customTitle.disabled = true; customTitle.value = ''; });
+  optCustom.addEventListener('change',  () => { customTitle.disabled = false; customTitle.focus(); });
+
+  document.getElementById('meeting-form').addEventListener('submit', function(e) {
+    if (optDefault.checked) {
+      const h = document.createElement('input');
+      h.type = 'hidden'; h.name = 'use_default'; h.value = '1';
+      this.appendChild(h);
+    }
+  });
+</script>
+</body>
+</html>

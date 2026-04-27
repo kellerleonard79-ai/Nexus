@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About – PHS Student Government</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- Nav -->
+  <nav class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <a href="{% url 'home' %}" class="font-semibold text-lg tracking-tight">PHS Student Government</a>
+      <div class="hidden sm:flex gap-6 text-sm text-gray-500">
+        <a href="{% url 'home' %}#announcements" class="hover:text-gray-900 transition">Announcements</a>
+        <a href="{% url 'home' %}#calendar" class="hover:text-gray-900 transition">Calendar</a>
+        <a href="{% url 'about' %}" class="text-gray-900 font-medium">About</a>
+      </div>
+    </div>
+    <a href="{% url 'login' %}"
+      class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium">
+      Officer Login
+    </a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="max-w-3xl mx-auto px-6 py-16 text-center">
+    <div class="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 rounded-full mb-6">
+      Pensacola High School
+    </div>
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">About SGA</h1>
+    <p class="text-gray-500 text-base leading-relaxed">
+      The Student Government Association at Pensacola High School is the official voice of the student body.
+    </p>
+  </section>
+
+  <!-- Mission -->
+  <section class="max-w-3xl mx-auto px-6 py-10 border-t border-gray-100">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-6">Our purpose</h2>
+    <div class="space-y-4">
+      <div class="flex gap-3 items-start">
+        <span class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+        <p class="text-gray-600 text-sm leading-relaxed">Serve as the official voice of the student body in all matters affecting student interests and welfare.</p>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+        <p class="text-gray-600 text-sm leading-relaxed">Foster collaboration and positive relations between students, faculty, and administration.</p>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+        <p class="text-gray-600 text-sm leading-relaxed">Organize and support school-wide activities and events that enhance school spirit and community engagement.</p>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+        <p class="text-gray-600 text-sm leading-relaxed">Advocate for student needs and promote a safe, inclusive, and productive school environment.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Executive Officers -->
+  <section class="max-w-3xl mx-auto px-6 py-10 border-t border-gray-100">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-1">Executive officers</h2>
+    <p class="text-sm text-gray-400 mb-6">School-wide leadership</p>
+    {% if exec_officers %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {% for officer in exec_officers %}
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <p class="text-sm font-semibold text-gray-900">{{ officer.full_name }}</p>
+        <p class="text-xs text-blue-600 mt-1">{{ officer.get_elected_position_display }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="border border-gray-200 rounded-xl p-6 text-sm text-gray-400">
+      Executive officer positions have not been filled yet.
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Class Officers -->
+  <section class="max-w-3xl mx-auto px-6 py-10 border-t border-gray-100 mb-16">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-1">Class officers</h2>
+    <p class="text-sm text-gray-400 mb-8">Grade-level representatives</p>
+    <div class="space-y-8">
+      {% for group in class_officers_grouped %}
+      <div>
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{{ group.label }}</h3>
+        {% if group.officers %}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {% for officer in group.officers %}
+          <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <p class="text-sm font-semibold text-gray-900">{{ officer.full_name }}</p>
+            <p class="text-xs text-blue-600 mt-1">{{ officer.get_elected_position_display }}</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400">No officers assigned yet.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-200 px-6 py-6 text-center text-xs text-gray-400">
+    Pensacola High School SGA · Built with SGA Nexus
+  </footer>
+
+</body>
+</html>
