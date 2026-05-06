@@ -80,6 +80,16 @@ class Member(models.Model):
         if self.attendance_warning_dismissed:
             return False
         return self.unexcused_absences() >= 2 or self.excused_absences() >= 4
+    
+    def unexcused_absences(self):
+        return self.attendance_records.filter(status='UNEXCUSED').count()
+
+    def excused_absences(self):
+        return self.attendance_records.filter(status='EXCUSED').count()
+    
+    def present_count(self):
+        """Count only sessions where member is marked as PRESENT"""
+        return self.attendance_records.filter(status='PRESENT').count()
 
     def __str__(self):
         return f"{self.full_name} ({self.student_id})"

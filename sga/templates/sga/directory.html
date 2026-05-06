@@ -25,10 +25,53 @@
       {% endfor %}
     {% endif %}
 
-    <form method="GET" class="mb-6">
-      <input type="text" name="q" value="{{ query }}" placeholder="Search by name..."
-        class="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-    </form>
+    <!-- Filters -->
+    <div class="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+      <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Search name</label>
+          <input type="text" name="q" value="{{ query }}" placeholder="Search by name..."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Sort by</label>
+          <select name="sort"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Name (A-Z)</option>
+            <option value="attendance" {% if sort_by == 'attendance' %}selected{% endif %}>Worst Attendance</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Dues status</label>
+          <select name="dues"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All</option>
+            <option value="PAID" {% if dues_filter == 'PAID' %}selected{% endif %}>Paid</option>
+            <option value="PENDING" {% if dues_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Permission tier</label>
+          <select name="tier"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All</option>
+            <option value="APPLICANT" {% if tier_filter == 'APPLICANT' %}selected{% endif %}>Applicant</option>
+            <option value="OFFICER" {% if tier_filter == 'OFFICER' %}selected{% endif %}>Officer</option>
+            <option value="SCI" {% if tier_filter == 'SCI' %}selected{% endif %}>SCI</option>
+          </select>
+        </div>
+        <div class="md:col-span-4 flex gap-2">
+          <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition font-medium">
+            Apply Filters
+          </button>
+          <a href="{% url 'directory' %}"
+            class="border border-gray-300 hover:border-gray-400 text-gray-700 text-sm px-4 py-2 rounded-lg transition font-medium">
+            Clear All
+          </a>
+        </div>
+      </form>
+    </div>
 
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <table class="w-full text-sm">
@@ -64,11 +107,15 @@
             <td class="px-4 py-3 text-gray-500">{{ m.get_grade_display }}</td>
             <td class="px-4 py-3 text-gray-500">{{ m.shirt_size }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium
-                {% if m.dues_status == 'PAID' %}bg-green-100 text-green-700
-                {% else %}bg-yellow-100 text-yellow-700{% endif %}">
-                {{ m.dues_status }}
-              </span>
+              <form method="POST" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_dues">
+                <input type="hidden" name="student_id" value="{{ m.student_id }}">
+                <button type="submit" title="Click to toggle dues status"
+                  class="w-4 h-4 rounded-full border-2 transition-all hover:scale-110
+                    {% if m.dues_status == 'PAID' %}bg-green-500 border-green-600{% else %}bg-white border-gray-300 hover:border-gray-400{% endif %}">
+                </button>
+              </form>
             </td>
             <td class="px-4 py-3">
               <span class="px-2 py-0.5 rounded-full text-xs font-medium

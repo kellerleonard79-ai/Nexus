@@ -131,6 +131,64 @@ def dashboard_view(request):
         'signup_enabled': settings.signup_enabled,
     })
 
+@login_required
+def edit_site_view(request):
+    try:
+        member = Member.objects.get(student_id=request.user.username)
+    except Member.DoesNotExist:
+        return redirect('login')
+    if not is_officer(member):
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+    
+    settings = SiteSettings.get()
+    announcements = Announcement.objects.all().order_by('-created_at')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'toggle_signup':
+            settings.signup_enabled = not settings.signup_enabled
+            settings.save()
+            messages.success(request, f'Join SGA button {"shown" if settings.signup_enabled else "hidden"}.')
+        
+        elif action == 'create_announcement':
+            title = request.POST.get('title', '').strip()
+            body = request.POST.get('body', '').strip()
+            is_published = bool(request.POST.get('is_published'))
+            if title and body:
+                Announcement.objects.create(
+                    title=title,
+                    body=body,
+                    is_published=is_published,
+                    created_by=member
+                )
+                messages.success(request, 'Announcement created.')
+            else:
+                messages.error(request, 'Title and body are required.')
+        
+        elif action == 'edit_announcement':
+            ann_id = request.POST.get('announcement_id')
+            ann = Announcement.objects.filter(id=ann_id).first()
+            if ann:
+                ann.title = request.POST.get('title', ann.title).strip()
+                ann.body = request.POST.get('body', ann.body).strip()
+                ann.is_published = bool(request.POST.get('is_published'))
+                ann.save()
+                messages.success(request, 'Announcement updated.')
+        
+        elif action == 'delete_announcement':
+            ann_id = request.POST.get('announcement_id')
+            Announcement.objects.filter(id=ann_id).delete()
+            messages.success(request, 'Announcement deleted.')
+        
+        return redirect('edit_site')
+    
+    return render(request, 'sga/edit_site.html', {
+        'member': member,
+        'settings': settings,
+        'announcements': announcements,
+    })
 
 @login_required
 def directory_view(request):
@@ -141,16 +199,53 @@ def directory_view(request):
     if not is_officer(member):
         messages.error(request, 'Access denied.')
         return redirect('dashboard')
-    query   = request.GET.get('q', '')
-    members = Member.objects.all().order_by('full_name')
+    
+    # Handle dues toggle
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'toggle_dues':
+            student_id = request.POST.get('student_id')
+            target = Member.objects.filter(student_id=student_id).first()
+            if target:
+                target.dues_status = 'PAID' if target.dues_status == 'PENDING' else 'PENDING'
+                target.save()
+        return redirect(request.get_full_path())
+    
+    query = request.GET.get('q', '')
+    sort_by = request.GET.get('sort', '')
+    dues_filter = request.GET.get('dues', '')
+    tier_filter = request.GET.get('tier', '')
+    
+    members = Member.objects.all()
+    
     if query:
         members = members.filter(full_name__icontains=query)
+    
+    if dues_filter:
+        members = members.filter(dues_status=dues_filter)
+    
+    if tier_filter:
+        members = members.filter(permission_tier=tier_filter)
+    
+    # Sorting
+    if sort_by == 'attendance':
+        # Annotate with attendance counts and sort by worst attendance
+        from django.db.models import Count, Q
+        members = members.annotate(
+            unexcused_count=Count('attendance_records', filter=Q(attendance_records__status='UNEXCUSED')),
+            excused_count=Count('attendance_records', filter=Q(attendance_records__status='EXCUSED'))
+        ).order_by('-unexcused_count', '-excused_count', 'full_name')
+    else:
+        members = members.order_by('full_name')
+    
     return render(request, 'sga/directory.html', {
         'members': members,
         'query': query,
         'member': member,
+        'sort_by': sort_by,
+        'dues_filter': dues_filter,
+        'tier_filter': tier_filter,
     })
-
 
 @login_required
 def profile_view(request):
@@ -802,6 +897,3 @@ def checkin_view(request, token):
         })
 
     return render(request, 'sga/checkin.html', {'session': session})
-def edit_site_view(request):
-    # For now, just render the template
-    return render(request, 'sga/edit_site.html')
