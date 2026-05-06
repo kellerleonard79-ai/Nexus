@@ -1033,7 +1033,7 @@ def account_detail_view(request, account_id):
         
     return redirect('account_detail', account_id=account_id)
 
-    transactions = account.transactions.all().order_by('date')
+transactions = account.transactions.all().order_by('date')
 
     # Initialize counters
     running_balance = account.starting_balance
