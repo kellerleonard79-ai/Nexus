@@ -24,3 +24,8 @@ admin.site.register(Agenda)
 admin.site.register(AgendaSection)
 admin.site.register(AgendaItem)
 admin.site.register(AgendaSubItem)
+
+from .models import Account, Transaction
+
+admin.site.register(Account)
+admin.site.register(Transaction)

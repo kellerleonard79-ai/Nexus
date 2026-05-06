@@ -23,4 +23,6 @@ urlpatterns = [
     path('checkin/<str:token>/',          views.checkin_view,        name='checkin'),
     path('test/',                         views.test_view,           name='test'),
     path('edit-site/',                    views.edit_site_view,      name='edit_site'),
+    path('bookkeeping/',                  views.bookkeeping_view,    name='bookkeeping'),
+    path('bookkeeping/<int:account_id>/', views.account_detail_view, name='account_detail'),
 ]

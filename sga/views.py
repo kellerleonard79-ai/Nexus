@@ -897,3 +897,160 @@ def checkin_view(request, token):
         })
 
     return render(request, 'sga/checkin.html', {'session': session})
+
+# ─── Bookkeeping ───────────────────────────────────────────────────────────────
+
+@login_required
+def bookkeeping_view(request):
+    try:
+        member = Member.objects.get(student_id=request.user.username)
+    except Member.DoesNotExist:
+        return redirect('login')
+    if member.permission_tier != 'SCI':
+        messages.error(request, 'Access denied. SCI members only.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create_account':
+            name = request.POST.get('name', '').strip()
+            starting_balance = request.POST.get('starting_balance', '0')
+            if name:
+                try:
+                    balance = float(starting_balance.replace(',', ''))
+                    Account.objects.create(name=name, starting_balance=balance)
+                    messages.success(request, f'Account "{name}" created.')
+                except ValueError:
+                    messages.error(request, 'Invalid starting balance.')
+            else:
+                messages.error(request, 'Account name is required.')
+        
+        elif action == 'edit_balance':
+            account_id = request.POST.get('account_id')
+            new_balance = request.POST.get('new_balance', '0')
+            account = Account.objects.filter(id=account_id).first()
+            if account:
+                try:
+                    balance = float(new_balance.replace(',', ''))
+                    account.starting_balance = balance
+                    account.save()
+                    messages.success(request, f'Starting balance updated for "{account.name}".')
+                except ValueError:
+                    messages.error(request, 'Invalid balance value.')
+        
+        elif action == 'delete_account':
+            account_id = request.POST.get('account_id')
+            account = Account.objects.filter(id=account_id).first()
+            if account:
+                name = account.name
+                account.delete()
+                messages.success(request, f'Account "{name}" deleted.')
+        
+        return redirect('bookkeeping')
+
+    accounts = Account.objects.all()
+    return render(request, 'sga/bookkeeping.html', {
+        'member': member,
+        'accounts': accounts,
+    })
+
+
+@login_required
+def account_detail_view(request, account_id):
+    try:
+        member = Member.objects.get(student_id=request.user.username)
+    except Member.DoesNotExist:
+        return redirect('login')
+    if member.permission_tier != 'SCI':
+        messages.error(request, 'Access denied. SCI members only.')
+        return redirect('dashboard')
+
+    account = Account.objects.filter(id=account_id).first()
+    if not account:
+        messages.error(request, 'Account not found.')
+        return redirect('bookkeeping')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'add_transaction':
+            date_str = request.POST.get('date', '')
+            credit_str = request.POST.get('credit', '').strip()
+            debit_str = request.POST.get('debit', '').strip()
+            notes = request.POST.get('notes', '').strip()
+            
+            try:
+                trans_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else date.today()
+                credit = float(credit_str.replace(',', '')) if credit_str else None
+                debit = float(debit_str.replace(',', '')) if debit_str else None
+                
+                if credit and debit:
+                    messages.error(request, 'Cannot have both credit and debit in one transaction.')
+                elif not credit and not debit:
+                    messages.error(request, 'Must specify either credit or debit.')
+                else:
+                    Transaction.objects.create(
+                        account=account,
+                        date=trans_date,
+                        credit=credit,
+                        debit=debit,
+                        notes=notes,
+                        created_by=member
+                    )
+                    messages.success(request, 'Transaction added.')
+            except ValueError:
+                messages.error(request, 'Invalid date or amount.')
+        
+        elif action == 'edit_transaction':
+            trans_id = request.POST.get('transaction_id')
+            transaction = Transaction.objects.filter(id=trans_id, account=account).first()
+            if transaction:
+                date_str = request.POST.get('date', '')
+                credit_str = request.POST.get('credit', '').strip()
+                debit_str = request.POST.get('debit', '').strip()
+                notes = request.POST.get('notes', '').strip()
+                
+                try:
+                    transaction.date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else transaction.date
+                    transaction.credit = float(credit_str.replace(',', '')) if credit_str else None
+                    transaction.debit = float(debit_str.replace(',', '')) if debit_str else None
+                    transaction.notes = notes
+                    
+                    if transaction.credit and transaction.debit:
+                        messages.error(request, 'Cannot have both credit and debit in one transaction.')
+                    elif not transaction.credit and not transaction.debit:
+                        messages.error(request, 'Must specify either credit or debit.')
+                    else:
+                        transaction.save()
+                        messages.success(request, 'Transaction updated.')
+                except ValueError:
+                    messages.error(request, 'Invalid date or amount.')
+        
+        elif action == 'delete_transaction':
+            trans_id = request.POST.get('transaction_id')
+            Transaction.objects.filter(id=trans_id, account=account).delete()
+            messages.success(request, 'Transaction deleted.')
+        
+        return redirect('account_detail', account_id=account_id)
+
+    transactions = account.transactions.all()
+
+    # Calculate running balance for each transaction
+    running_balance = account.starting_balance
+    trans_with_balance = []
+    for trans in reversed(list(transactions)):
+        if trans.credit:
+            running_balance += trans.credit
+        if trans.debit:
+            running_balance -= trans.debit
+        trans.balance_after = running_balance
+        trans_with_balance.append(trans)
+    
+    trans_with_balance.reverse()
+    return render(request, 'sga/account_detail.html', {
+        'member': member,
+        'account': account,
+        'transactions': trans_with_balance,
+        'today': date.today(),
+    })

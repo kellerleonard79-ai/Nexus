@@ -309,3 +309,38 @@ class SiteSettings(models.Model):
 
     class Meta:
         verbose_name = 'Site settings'
+
+class Account(models.Model):
+    name = models.CharField(max_length=100)
+    starting_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def current_balance(self):
+        """Calculate current balance: starting balance + credits - debits"""
+        transactions = self.transactions.all()
+        total_credits = sum(t.credit for t in transactions if t.credit)
+        total_debits = sum(t.debit for t in transactions if t.debit)
+        return self.starting_balance + total_credits - total_debits
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+class Transaction(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
+    date = models.DateField()
+    credit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    debit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, related_name='transactions_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.account.name} - {self.date}"
+
+    class Meta:
+        ordering = ['-date', '-created_at']
