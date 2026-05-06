@@ -34,16 +34,16 @@
       <p class="text-sm font-medium text-gray-900">Profile</p>
       <p class="text-xs text-gray-400 mt-1">Committees, achievements</p>
     </a>
-    {% if member.permission_tier == 'SCI' %}
-    <a href="#" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
-      <p class="text-sm font-medium text-gray-900">Elections</p>
-      <p class="text-xs text-gray-400 mt-1">Manage applications</p>
-    </a>
-    <a href="#" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
-      <p class="text-sm font-medium text-gray-900">Bookkeeping</p>
-      <p class="text-xs text-gray-400 mt-1">View finances</p>
-    </a>
-    {% endif %}
+  {% if member.permission_tier == 'SCI' %}
+  <a href="#" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+    <p class="text-sm font-medium text-gray-900">Elections</p>
+    <p class="text-xs text-gray-400 mt-1">Manage applications</p>
+  </a>
+  <a href="{% url 'bookkeeping' %}" class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+    <p class="text-sm font-medium text-gray-900">Bookkeeping</p>
+    <p class="text-xs text-gray-400 mt-1">View finances</p>
+  </a>
+  {% endif %}
   </div>
 
   {% else %}

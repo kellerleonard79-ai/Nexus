@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from .models import (
     Member, SiteSettings, Announcement, Meeting,
     AttendanceSession, AttendanceRecord,
-    Agenda, AgendaSection, AgendaItem, AgendaSubItem, Account
+    Agenda, AgendaSection, AgendaItem, AgendaSubItem, Account, Transaction
 )
 import uuid
 import qrcode
