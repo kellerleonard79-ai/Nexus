@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from .models import (
     Member, SiteSettings, Announcement, Meeting,
     AttendanceSession, AttendanceRecord,
-    Agenda, AgendaSection, AgendaItem, AgendaSubItem,
+    Agenda, AgendaSection, AgendaItem, AgendaSubItem, Account
 )
 import uuid
 import qrcode
@@ -954,7 +954,6 @@ def bookkeeping_view(request):
         'member': member,
         'accounts': accounts,
     })
-
 
 @login_required
 def account_detail_view(request, account_id):
