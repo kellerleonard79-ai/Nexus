@@ -1,4 +1,3 @@
-{% load bookkeeping_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,12 +38,10 @@
       </div>
       <div>
         <p class="text-gray-400 text-xs mb-1">Total credits</p>
-        <p class="text-green-600 font-medium">+${% widthratio account.transactions.all|length 1 1 as dummy %}{{ account.transactions.all|sum_credits|floatformat:2 }}</p>
-      </div>
+        <p class="text-green-600 font-medium">+${{ total_credits|floatformat:2 }}</p>      </div>
       <div>
         <p class="text-gray-400 text-xs mb-1">Total debits</p>
-        <p class="text-red-600 font-medium">-${% widthratio account.transactions.all|length 1 1 as dummy %}{{ account.transactions.all|sum_debits|floatformat:2 }}</p>
-      </div>
+        <p class="text-red-600 font-medium">-${{ total_debits|floatformat:2 }}</p>      </div>
     </div>
   </div>
 

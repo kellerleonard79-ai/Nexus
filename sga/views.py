@@ -1031,25 +1031,37 @@ def account_detail_view(request, account_id):
             Transaction.objects.filter(id=trans_id, account=account).delete()
             messages.success(request, 'Transaction deleted.')
         
-        return redirect('account_detail', account_id=account_id)
+    return redirect('account_detail', account_id=account_id)
 
-    transactions = account.transactions.all()
+    transactions = account.transactions.all().order_by('date')
 
-    # Calculate running balance for each transaction
+    # Initialize counters
     running_balance = account.starting_balance
+    total_credits = 0
+    total_debits = 0
     trans_with_balance = []
-    for trans in reversed(list(transactions)):
+
+    # Do everything in one loop
+    for trans in transactions:
         if trans.credit:
+            total_credits += trans.credit
             running_balance += trans.credit
         if trans.debit:
+            total_debits += trans.debit
             running_balance -= trans.debit
+        
+        # Attach the calculated balance to the object
         trans.balance_after = running_balance
         trans_with_balance.append(trans)
-    
+
+    # If you want the most recent transactions at the top of the HTML table
     trans_with_balance.reverse()
+
     return render(request, 'sga/account_detail.html', {
         'member': member,
         'account': account,
         'transactions': trans_with_balance,
         'today': date.today(),
+        'total_credits': total_credits,
+        'total_debits': total_debits,
     })
